@@ -50,10 +50,10 @@ C(b) = \left( X_{\text{scope}},\; Y_{\text{role}},\; \Delta Z_{\text{write}},\; 
 $$
 
 - **Exit Contract Lattice (`E_exit`):** Captures exceptions (`throw:ApiError`, `catch:IntegrityError`), HTTP status codes (`status:403`, `status:404`, `status:422`), semantic error tags (`err:forbidden`), and guard returns (`guard_return`).
-- **Relational Schema Extraction (`S(T)`):** Parses `.sql` migration files and inline `CREATE TABLE` blocks into column sets `Cols(T)` and strict required column sets `Req(T)`:
+- **Relational Schema Evolution & Lexical Scope Algebra (`S(T)`):** Parses `.sql` migration files and inline `CREATE TABLE` blocks into column sets `Cols(T)` and strict required column sets `Req(T)`, folds chronological `ALTER TABLE` operations (`DROP NOT NULL`, `SET NOT NULL`, `SET DEFAULT`, `ADD/DROP COLUMN`) across sorted migrations, and binds local `INSERT INTO T` statements to module-local `CREATE TABLE T` definitions before falling back to global schemas:
 
 $$
-\text{Req}(T) = \left\{\, c \in \text{Cols}(T) \;\middle|\; \text{NOT\_NULL}(c) \land \neg\text{DEFAULT}(c) \land \neg\text{AUTOINCREMENT}(c) \,\right\}
+\text{Req}^{(k)}(T) = \Big(\text{Req}^{(k-1)}(T) \cup \Delta_{\text{SET\_NOT\_NULL}}^{(k)}(T)\Big) \setminus \Big(\Delta_{\text{DROP\_NOT\_NULL}}^{(k)}(T) \cup \Delta_{\text{SET\_DEFAULT}}^{(k)}(T)\Big)
 $$
 
 ---
@@ -103,10 +103,10 @@ Pass C checks **7 formal invariants** statically during `dossier` compilation AN
 
 | # | Diagnostic Tag | Mathematical Invariant Checked | Bug Class Caught Statically |
 | :--- | :--- | :--- | :--- |
-| **1** | `[6D Schema Contract Violation]` | `Req(T) \ Cols_INSERT(q) = ∅` | `INSERT INTO` omitting `NOT NULL` columns lacking `DEFAULT` in `.sql` / `local_db.py` |
+| **1** | `[6D Schema Contract Violation]` | `Req^(k)(T) \ Cols_INSERT(q) = ∅` | `INSERT INTO` omitting `NOT NULL` columns lacking `DEFAULT` after chronological `ALTER TABLE` folding & lexical scope resolution |
 | **2** | `[6D SQL Dialect Mismatch]` | `Φ_query(q) ⊆ Φ_adapter(SQLite)` | PostgreSQL `interval '...'`, `make_interval`, `= ANY(%s)` against untranslated `sqlite3` |
 | **3** | `[6D Exception Contract Mismatch]` | `ΔZ_write ≠ ∅ ⟹ catch:IntegrityError ∈ E_exit` | Catching `psycopg.UniqueViolation` without `sqlite3.IntegrityError` |
-| **4** | `[6D Type Disjointness Violation]` | `τ(p_UUID) ∩ τ(row[k]_TEXT) ≠ ∅` | Comparing `UUID` parameter directly to SQLite `TEXT` `row["col"]` without `str()`/`UUID()` |
+| **4** | `[6D Type Disjointness Violation]` | `τ(e_1) ∩ τ(e_2) = ∅` (via Python `ast` dataflow) | Intra-procedural AST dataflow tracking parameter/variable types & row aliases (`owner = row["col"]`) across disjoint comparisons (`UUID` vs `TEXT`, `int` vs `str`) |
 | **5** | `[6D Producer-Consumer SQL Shape Violation]` | `Post(SELECT) ⊨ Pre(row[k])` | Reading `row["col"]` when `col` was omitted from `SELECT c1, c2 FROM T` |
-| **6** | `[6D HTTP Route Method Mismatch]` | `Method_FE(u) ∈ Methods_BE(url)` | Frontend `fetch`/`axios` calling `DELETE`/`PUT` on a `POST`-only backend route |
-| **7** | `[6D Cross-Stack HTTP Shape Violation]` | `Post_BE(v) ⊨ Pre_FE(u)` | Frontend reading `data.prop` when backend handler's `return {...}` dict omits `prop` |
+| **6** | `[6D HTTP Route Method Mismatch]` | `Method_FE(u) ∈ Methods_BE(url)` | Frontend `fetch`/`axios` calling `DELETE`/`PUT` on a `POST`-only backend route (including `${API_BASE}/...` prefixes) |
+| **7** | `[6D Cross-Stack HTTP Shape Violation]` | `Post_BE(v) ⊨ Pre_FE(u)` | Frontend reading `data.prop` when backend handler's AST `return {...}` (including nested dicts & Pydantic/dataclass models) omits `prop` |

@@ -44,7 +44,7 @@ ProjectBrain exposes **26 MCP tools** and **12 CLI commands** (`projectbrain <cm
 
 ## 2. Industry Benchmark & Capability Comparison
 
-| Capability / Technical Dimension | Raw Shell (`rg` + `read_file`) | Cursor / Windsurf (Vector RAG) | Aider RepoMap (Symbol PageRank) | Sourcegraph / Serena (SCIP / LSP) | CodeQL / Semgrep | **ProjectBrain (`v0.6.1`)** |
+| Capability / Technical Dimension | Raw Shell (`rg` + `read_file`) | Cursor / Windsurf (Vector RAG) | Aider RepoMap (Symbol PageRank) | Sourcegraph / Serena (SCIP / LSP) | CodeQL / Semgrep | **ProjectBrain (`v0.6.2`)** |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Primary Representation** | Flat text lines | 500-token vector chunks | File-level symbol signatures | Single-language LSP symbols | Relational Datalog DB | **6D Coordinate Matrix + 4-Layer Multiplex Graph** |
 | **Indexing Latency (60-file repo)** | N/A | 5–30s (cloud API) | ~1.5s | 3–15s (LSP warmup) | 30–180s | **~0.4s (incremental SQLite cache)** |
