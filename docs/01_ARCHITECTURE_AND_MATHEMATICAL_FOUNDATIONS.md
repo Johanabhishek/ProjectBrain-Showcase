@@ -110,3 +110,16 @@ Pass C checks **7 formal invariants** statically during `dossier` compilation AN
 | **5** | `[6D Producer-Consumer SQL Shape Violation]` | `Post(SELECT) ⊨ Pre(row[k])` | Reading `row["col"]` when `col` was omitted from `SELECT c1, c2 FROM T` |
 | **6** | `[6D HTTP Route Method Mismatch]` | `Method_FE(u) ∈ Methods_BE(url)` | Frontend `fetch`/`axios` calling `DELETE`/`PUT` on a `POST`-only backend route (including `${API_BASE}/...` prefixes) |
 | **7** | `[6D Cross-Stack HTTP Shape Violation]` | `Post_BE(v) ⊨ Pre_FE(u)` | Frontend reading `data.prop` when backend handler's AST `return {...}` (including nested dicts & Pydantic/dataclass models) omits `prop` |
+
+---
+
+### Engine 6: Transformer-Native Attention Compilation (Causal-Mask & RoPE Alignment)
+
+Standard retrieval tools format outputs for human eyes (sorting by score and placing diagnostics at the bottom). ProjectBrain compiles its dossier specifically for the mathematical physics of decoder-only Transformer self-attention (`Attention(Q, K, V) = softmax(Q K^T / sqrt(d_k) + M_causal + B_RoPE) V`):
+
+1. **Causal-Mask Topological Pre-Conditioning (`M_{i < j} = -∞`):**
+   Because token $i$ in a causal Transformer can only attend to earlier tokens $j \le i$ in its KV cache, ProjectBrain emits the **Static 6D Contract, Schema & Dialect Diagnostics** block at the **top** of the task section (before any implementation code slices). Every code token in every slice attends directly to the violated invariants during Layer-1 prefill.
+2. **Causal-Spine & Violation-Site Unfolding (`pin_lines`):**
+   Every line participating in a 6D contract violation, a cross-stack `http_flow` bridge, or an intermediate call along a `Causal Symptom Chop` path is pinned in [`slice_lines()`] so the smart focus-window folder never collapses over an active bug or causal hop.
+3. **Zero-Distance ($\Delta p = 1$) Inline Witness Injection (`inline_annotations`):**
+   To defeat long-range Rotary Position Embedding (RoPE) decay across distant spans, ProjectBrain injects deterministic 1-line ASCII witnesses (`   ! | # >>> [6D-CONTRACT L...]`, `# >>> [HTTP-BRIDGE L...]`, `# >>> [CAUSAL-CHOP L...]`) directly above the exact AST statement (`Δp = 1` line away).
